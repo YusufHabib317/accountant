@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String   @id
+  name          String
+  email         String
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  Session          Session[]
+  Account          Account[]
+  twoFactorEnabled Boolean?
+
+  @@unique([email])
+  @@map("user_app")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id           String    @id
+  accountId    String
+  providerId   String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime?
+  password     String?
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  @@map("verification")
+}
+
+model Supplier {
+  id               String            @id @default(cuid())
+  name             String
+  contactInfo      String            @map("contact_info")
+  phone            String?
+  address          String?
+  city             String?
+  email            String?
+  companyName      String?           @map("company_name")
+  contactPerson    String?           @map("contact_person")
+  products         Product[]
+  purchaseInvoices PurchaseInvoice[]
+  notes            String?
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  @@map("suppliers")
+}
+
+model Product {
+  id            String         @id @default(cuid())
+  name          String
+  code          String         @unique
+  price         Float?
+  salePrice     Float?         @map("sale_price")
+  cost          Float?
+  stock         Int?           @default(0)
+  purchaseItems PurchaseItem[]
+  saleItems     SaleItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Supplier      Supplier[]
+
+  @@map("products")
+}
+
+model PurchaseInvoice {
+  id           String         @id @default(cuid())
+  date         DateTime       @default(now())
+  subtotal     Float
+  tax          Float          @default(0)
+  total        Float
+  paid         Float          @default(0)
+  remaining    Float          @default(0)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  supplierId   String         @map("supplier_id")
+  items        PurchaseItem[]
+  supplier     Supplier       @relation(fields: [supplierId], references: [id])
+  Payment      Payment[]
+
+  @@map("purchase_invoices")
+}
+
+model PurchaseItem {
+  id                String          @id @default(cuid())
+  quantity          Int
+  cost              Float
+  total             Float
+  purchaseInvoiceId String
+  productId         String
+  purchaseInvoice   PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  product           Product         @relation(fields: [productId], references: [id])
+
+  @@map("purchase_items")
+}
+
+model SaleInvoice {
+  id            String     @id @default(cuid())
+  date          DateTime   @default(now())
+  customerName  String? @map("customer_name")
+  items         SaleItem[]
+  subtotal      Float
+  tax           Float      @default(0)
+  total         Float
+  paid          Float      @default(0)
+  remaining     Float      @default(0)
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  Payment       Payment[]
+
+  @@map("sale_invoices")
+}
+
+model SaleItem {
+  id            String      @id @default(cuid())
+  quantity      Int
+  price         Float
+  total         Float
+  saleInvoiceId String
+  productId     String
+  saleInvoice   SaleInvoice @relation(fields: [saleInvoiceId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+enum PaymentType {
+  CUSTOMER_PAYMENT
+  SUPPLIER_PAYMENT
+}
+
+model Payment {
+  id                String           @id @default(cuid())
+  amount            Float
+  date              DateTime         @default(now())
+  type              PaymentType
+  saleInvoice       SaleInvoice?     @relation(fields: [saleInvoiceId], references: [id])
+  saleInvoiceId     String?
+  purchaseInvoice   PurchaseInvoice? @relation(fields: [purchaseInvoiceId], references: [id])
+  purchaseInvoiceId String?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("payments")
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  amount    Float
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("expenses")
+}
