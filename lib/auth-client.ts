@@ -10,6 +10,5 @@ export const {
   resetPassword,
   signOut,
 } = createAuthClient({
-  baseURL: process.env.BETTER_AUTH_URL!,
   plugins: [emailOTPClient()],
 });
