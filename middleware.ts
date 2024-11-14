@@ -46,17 +46,20 @@ export default async function authMiddleware(request: NextRequest) {
     response.headers.set('X-Content-Type-Options', 'nosniff');
   }
   try {
+    const baseURL = process.env.NODE_ENV === 'production'
+      ? `https://${request.headers.get('host')}`
+      : request.nextUrl.origin;
     const { data: session } = await betterFetch<Session>(
       '/api/auth/get-session',
       {
-        baseURL: process.env.NODE_ENV === 'production'
-          ? `https://${request.headers.get('host')}`
-          : request.nextUrl.origin,
+        baseURL,
         headers: {
           cookie: request.headers.get('cookie') || '',
         },
       },
     );
+
+    console.log('🚀 ~ authMiddleware ~ baseURL:', baseURL);
 
     if (!session) {
       const response = NextResponse.redirect(new URL('/auth/login', request.url));
