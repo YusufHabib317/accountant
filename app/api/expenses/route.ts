@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable sonarjs/no-duplicate-string */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { HTTPS_CODES } from '@/data';
 import createApiError from '@/utils/api-handlers/create-api-error';
