@@ -47,8 +47,8 @@ export default async function authMiddleware(request: NextRequest) {
   }
   try {
     const baseURL = process.env.NODE_ENV === 'production'
-      ? `https://${request.headers.get('host')}/api`
-      : `${request.nextUrl.origin}/api`;
+      ? `https://${request.headers.get('host')}`
+      : `${request.nextUrl.origin}`;
     const { data: session } = await betterFetch<Session>(
       '/api/auth/get-session',
       {
