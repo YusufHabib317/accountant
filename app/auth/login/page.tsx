@@ -64,6 +64,7 @@ export default function LoginPage() {
             router.push('/dashboard/statics');
           },
           onError: (ctx) => {
+            console.log('🚀 ~ onSubmit ~ ctx:', ctx.error);
             setIsLoading(false);
             toast({
               title: 'Login',
