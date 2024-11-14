@@ -60,6 +60,7 @@ export default async function authMiddleware(request: NextRequest) {
     );
 
     console.log('🚀 ~ authMiddleware ~ baseURL:', baseURL);
+    console.log('🚀 ~ authMiddleware ~ session:', session);
 
     if (!session) {
       const response = NextResponse.redirect(new URL('/auth/login', request.url));
