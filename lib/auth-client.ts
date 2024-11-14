@@ -10,5 +10,6 @@ export const {
   resetPassword,
   signOut,
 } = createAuthClient({
+  baseURL: 'https://accountant-zz8m.onrender.com',
   plugins: [emailOTPClient()],
 });
