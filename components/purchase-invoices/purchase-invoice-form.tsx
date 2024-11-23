@@ -61,7 +61,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
     name: 'items',
   });
 
-  const { mutate: createMutate, isPending: isLoadingCreate } = useMutation({
+  const { mutate: createMutate, isLoading: isLoadingCreate } = useMutation({
     mutationFn: cretePurchaseInvoiceMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -83,7 +83,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
     },
   });
 
-  const { mutate: updateMutate, isPending: isLoadingUpdate } = useMutation({
+  const { mutate: updateMutate, isLoading: isLoadingUpdate } = useMutation({
     mutationFn: updatePurchaseInvoiceMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -94,6 +94,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
         title: 'Success',
         description: 'Purchase invoice updated',
       });
+      window.location.reload();
     },
     onError: (error) => {
       toast({
@@ -158,7 +159,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="flex justify-end">
-            <Button type="submit" disabled={isLoading} isLoading={isLoading}>
+            <Button type="submit" disabled={isLoading || !form.watch('supplierId')} isLoading={isLoading}>
               {mode === 'create' ? 'Create' : 'Update'}
             </Button>
           </div>
@@ -168,7 +169,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
             <FormField
               control={form.control}
               name="supplierId"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel>Supplier</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
@@ -187,7 +188,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage>{fieldState.error?.message}</FormMessage>
                 </FormItem>
               )}
             />
@@ -217,7 +218,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 border bg-slate-900 rounded-md p-5">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Items</h3>
               <Button
@@ -296,6 +297,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                           <Input
                             type="number"
                             readOnly
+                            disabled
                             {...field}
                             onChange={(e) => {
                               field.onChange(Number(e.target.value));
@@ -310,7 +312,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                         control={form.control}
                         name={`items.${index}.total`}
                         render={({ field }) => (
-                          <Input type="number" {...field} readOnly />
+                          <Input type="number" {...field} readOnly disabled />
                         )}
                       />
                     </TableCell>
@@ -339,7 +341,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Subtotal</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -374,7 +376,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Total</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -409,7 +411,7 @@ export default function PurchaseInvoiceForm(props: PurchaseInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Remaining</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

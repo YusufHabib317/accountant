@@ -26,14 +26,113 @@ export const productsColumns: ColumnDef<ProductsApiResponse[number]>[] = [
         }}
       >
         Name
-        <ArrowUpDown />
+        <ArrowUpDown className="w-4 h-4" />
       </Button>
     ),
     cell: ({ row }) => {
       const value = row.getValue('name');
       return (
-        <div className="font-medium">
+        <div className="font-medium ml-5">
           {value ? String(value) : '-'}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'code',
+    accessorKey: 'code',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          column.toggleSorting(column.getIsSorted() === 'asc');
+        }}
+      >
+        Code
+        <ArrowUpDown className="w-4 h-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('code');
+      return (
+        <div className="font-medium ml-5">
+          {value ? String(value) : '-'}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'cost',
+    accessorKey: 'cost',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Cost
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('cost');
+      return (
+        <div className="font-medium ml-5">
+          {value ? String(value) : '-'}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'price',
+    accessorKey: 'price',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Price
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('price');
+      return (
+        <div className="font-medium ml-5">
+          {value ? String(value) : '-'}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'salePrice',
+    accessorKey: 'salePrice',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Sale Price
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('salePrice');
+      return (
+        <div className="font-medium ml-5">
+          {value ? String(value) : '-'}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'stock',
+    accessorKey: 'stock',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Stock
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const value = row.getValue('stock');
+      return (
+        <div className="font-medium ml-5">
+          {value as React.ReactNode}
         </div>
       );
     },

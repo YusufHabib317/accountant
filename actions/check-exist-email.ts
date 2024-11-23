@@ -16,8 +16,7 @@ export const checkEmailExists = async (email: string) => {
       success: false,
       message: 'Email does not exist',
     };
-  } catch (error) {
-    console.log('🚀 ~ checkEmailExists ~ error:', error);
+  } catch {
     return {
       success: false,
       message: 'Something went wrong while checking the email',

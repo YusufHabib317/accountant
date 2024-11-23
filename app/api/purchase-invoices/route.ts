@@ -2,7 +2,6 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { NextRequest, NextResponse } from 'next/server';
 import { HTTPS_CODES } from '@/data';
-import createApiError from '@/utils/api-handlers/create-api-error';
 import { handleResponse } from '@/utils/handle-response';
 import { SuccessResponseTransformer } from '@/types/api-response';
 import {
@@ -13,14 +12,20 @@ import {
   updatePurchaseInvoice,
 } from '@/db/purchase-invoice';
 import { createPurchaseSchemaWithRefinements, transformToPurchaseInvoiceUpdate, updatePurchaseSchema } from '@/schema/purchase-invoices';
+import { createApiError } from '@/utils/api-handlers/create-api-error';
+import { getUserId } from '@/utils/get-session';
 
 export async function GET(req: NextRequest, res:NextResponse) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (id) {
-      const purchaseInvoice = await getPurchaseInvoiceById(id);
+      const purchaseInvoice = await getPurchaseInvoiceById(id, userId);
 
       if (!purchaseInvoice) {
         return NextResponse.json({ error: 'Purchase invoice not found' }, { status: 404 });
@@ -38,10 +43,7 @@ export async function GET(req: NextRequest, res:NextResponse) {
       return handleResponse(res, SuccessResponseTransformer, successResponse, HTTPS_CODES.SUCCESS);
     }
 
-    // const queryParams = Object.fromEntries(req.nextUrl.searchParams.entries());
-    // console.log('🚀 ~ GET ~ queryParams:', queryParams);
-
-    const purchaseInvoices = await getPurchaseInvoices(req);
+    const purchaseInvoices = await getPurchaseInvoices(req, userId);
     const successResponse = {
       success: true,
       message: purchaseInvoices.message,
@@ -59,9 +61,13 @@ export async function GET(req: NextRequest, res:NextResponse) {
 
 export async function POST(req: NextRequest, res:NextResponse) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json();
     const validatedData = createPurchaseSchemaWithRefinements.parse(body);
-    const newPurchaseInvoice = await createPurchaseInvoice(validatedData);
+    const newPurchaseInvoice = await createPurchaseInvoice(validatedData, userId);
 
     const successResponse = {
       success: true,
@@ -75,16 +81,20 @@ export async function POST(req: NextRequest, res:NextResponse) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: 'Supplier ID is required' }, { status: 400 });
     }
 
-    await deletePurchaseInvoice(id);
+    await deletePurchaseInvoice(id, userId);
     return NextResponse.json(null, { status: HTTPS_CODES.NO_CONTENT });
   } catch (e) {
     const error = createApiError({ error: e });
@@ -94,6 +104,10 @@ export async function DELETE(request: Request) {
 
 export async function PUT(req: NextRequest, res: NextResponse) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -105,7 +119,7 @@ export async function PUT(req: NextRequest, res: NextResponse) {
     const validatedData = updatePurchaseSchema.parse(body);
 
     const updateData = transformToPurchaseInvoiceUpdate(validatedData);
-    const updatedPurchaseInvoice = await updatePurchaseInvoice(id, updateData);
+    const updatedPurchaseInvoice = await updatePurchaseInvoice(id, updateData, userId);
 
     const successResponse = {
       success: true,

@@ -3,7 +3,13 @@
 import * as React from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { type ThemeProviderProps } from 'next-themes';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  Hydrate,
+  QueryCache,
+  MutationCache,
+} from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToast } from '@/components/ui/sonner';
 
@@ -11,12 +17,38 @@ function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 
+interface ProvidersProps {
+  children: React.ReactNode;
+}
+
 export function Providers({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const [queryClient] = React.useState(() => new QueryClient());
+}: Readonly<ProvidersProps>) {
+  const [queryClient] = React.useState(
+    () => new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 0,
+          refetchOnWindowFocus: true,
+          // refetchInterval: 60000,
+          retry: 3,
+          refetchIntervalInBackground: false,
+          refetchOnReconnect: true,
+          keepPreviousData: true,
+        },
+      },
+      queryCache: new QueryCache({
+        onError: (error, query) => {
+          console.error(`Something went wrong: ${error}`);
+        },
+      }),
+      mutationCache: new MutationCache({
+        onError: (error) => {
+          console.error(`Mutation error: ${error}`);
+        },
+      }),
+    }),
+  );
   return (
     <ThemeProvider
       attribute="class"
@@ -25,9 +57,11 @@ export function Providers({
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <SonnerToast />
-        {children}
+        <Hydrate>
+          <Toaster />
+          <SonnerToast />
+          {children}
+        </Hydrate>
       </QueryClientProvider>
     </ThemeProvider>
   );

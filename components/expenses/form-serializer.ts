@@ -1,4 +1,5 @@
 import { ExpensesApiResponse } from '@/query/expense/types';
+import dayjs from 'dayjs';
 
 export const serializer = (
   data: ExpensesApiResponse[number] | undefined,
@@ -7,12 +8,11 @@ export const serializer = (
   if (mode === 'update' && data) {
     return {
       id: data.id,
-      date: data.date,
+      date: data?.date ? dayjs(data.date).format('YYYY-MM-DDTHH:mm') : '',
       name: data.name,
+      notes: data.notes ?? '',
       amount: data.amount,
       category: data.category,
-      createAt: data.createAt,
-      updateAt: data.updateAt,
     };
   }
 
@@ -21,5 +21,6 @@ export const serializer = (
     name: '',
     amount: 0,
     category: '',
+    notes: '',
   };
 };

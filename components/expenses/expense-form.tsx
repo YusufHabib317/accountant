@@ -42,7 +42,7 @@ export default function ExpenseForm(props: ExpenseFormProps) {
     defaultValues: serializer(expenseData, mode),
   });
 
-  const { mutate: createMutate, isPending: isLoadingCreate } = useMutation({
+  const { mutate: createMutate, isLoading: isLoadingCreate } = useMutation({
     mutationFn: creteExpenseMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -64,7 +64,7 @@ export default function ExpenseForm(props: ExpenseFormProps) {
     },
   });
 
-  const { mutate: updateMutate, isPending: isLoadingUpdate } = useMutation({
+  const { mutate: updateMutate, isLoading: isLoadingUpdate } = useMutation({
     mutationFn: updateExpenseMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -160,14 +160,9 @@ export default function ExpenseForm(props: ExpenseFormProps) {
                   <FormControl>
                     <Input
                       type="datetime-local"
-                      value={
-                        field.value
-                          ? dayjs(field.value).format('YYYY-MM-DDTHH:mm')
-                          : dayjs().format('YYYY-MM-DDTHH:mm')
-                        }
+                      value={field.value || dayjs().format('YYYY-MM-DDTHH:mm')}
                       onChange={(e) => {
-                        const newValue = dayjs(e.target.value).toISOString();
-                        field.onChange(newValue);
+                        field.onChange(e.target.value);
                       }}
                     />
                   </FormControl>

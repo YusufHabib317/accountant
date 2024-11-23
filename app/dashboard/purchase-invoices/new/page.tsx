@@ -22,7 +22,7 @@ export default function PurchaseInvoiceCreate() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center min-h-[calc(100vh-80px)]">
         <Loader2 className="animate-spin" />
       </div>
     );

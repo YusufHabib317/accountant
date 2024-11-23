@@ -1,6 +1,3 @@
-/* eslint-disable complexity */
-/* eslint-disable sonarjs/cognitive-complexity */
-
 import { suppliersApiResponse } from '@/query/suppliers/types';
 
 export const serializer = (
@@ -11,13 +8,11 @@ export const serializer = (
     return {
       id: data.id || '',
       name: data.name || '',
-      contactInfo: data.contactInfo || '',
       phone: data.phone || '',
       address: data.address || '',
       city: data.city || '',
       email: data.email || '',
       companyName: data.companyName || '',
-      contactPerson: data.contactPerson || '',
       notes: data.notes || '',
       products: data.products || null,
       invoice: data.invoice || null,
@@ -29,13 +24,11 @@ export const serializer = (
   return {
     id: '',
     name: '',
-    contactInfo: '',
     phone: '',
     address: '',
     city: '',
     email: '',
     companyName: '',
-    contactPerson: '',
     notes: '',
     products: null,
     invoice: null,

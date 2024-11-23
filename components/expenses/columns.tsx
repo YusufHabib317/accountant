@@ -11,30 +11,83 @@ import {
 import { ROUTES } from '@/data';
 import { ExpensesApiResponse } from '@/query/expense/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { ArrowUpDown, MoreHorizontal, Pencil } from 'lucide-react';
+import { MoreHorizontal, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
 export const expensesColumns: ColumnDef<ExpensesApiResponse[number]>[] = [
   {
-    id: 'amount',
-    accessorKey: 'AMOUNT',
+    id: 'name',
+    accessorKey: 'name',
     header: ({ column }) => (
       <Button
         variant="ghost"
-        onClick={() => {
-          column.toggleSorting(column.getIsSorted() === 'asc');
-        }}
       >
-        AMOUNT
-        <ArrowUpDown />
+        Name
       </Button>
     ),
     cell: ({ row }) => {
       const expense = row.original;
       return (
-        <div className="font-medium">
-          {expense.amount }
+        <div className="font-medium ml-5">
+          {expense.name}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'amount',
+    accessorKey: 'amount',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Amount
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const expense = row.original;
+      return (
+        <div className="font-medium ml-5">
+          {expense.amount}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'category',
+    accessorKey: 'category',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Category
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const expense = row.original;
+      return (
+        <div className="font-medium ml-5">
+          {expense.category}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'date',
+    accessorKey: 'date',
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+      >
+        Date
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const expense = row.original;
+      return (
+        <div className="font-medium ml-5">
+          {expense.date}
         </div>
       );
     },

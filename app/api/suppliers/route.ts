@@ -1,26 +1,33 @@
 /* eslint-disable no-console */
 /* eslint-disable sonarjs/no-duplicate-string */
+
 import {
   getSuppliers,
   getSupplierById,
   deleteSupplier,
+  createSupplier,
   updateSupplier,
 } from '@/db/supplier';
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupplierSchema } from '@/schema/suppliers';
 import { HTTPS_CODES } from '@/data';
-import createApiError from '@/utils/api-handlers/create-api-error';
 import { handleResponse } from '@/utils/handle-response';
 import { SuccessResponseTransformer } from '@/types/api-response';
-import { db } from '@/lib/db';
+import { createApiError } from '@/utils/api-handlers/create-api-error';
+import { getUserId } from '@/utils/get-session';
 
 export async function GET(req: NextRequest, res:NextResponse) {
   try {
+    const userId = await getUserId(req);
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (id) {
-      const supplier = await getSupplierById(id);
+      const supplier = await getSupplierById(id, userId!);
 
       if (!supplier) {
         return NextResponse.json({ error: 'Supplier not found' }, { status: 404 });
@@ -38,10 +45,7 @@ export async function GET(req: NextRequest, res:NextResponse) {
       return handleResponse(res, SuccessResponseTransformer, successResponse, HTTPS_CODES.SUCCESS);
     }
 
-    // const queryParams = Object.fromEntries(req.nextUrl.searchParams.entries());
-    // console.log('🚀 ~ GET ~ queryParams:', queryParams);
-
-    const suppliers = await getSuppliers(req);
+    const suppliers = await getSuppliers(req, userId!);
     const successResponse = {
       success: true,
       message: suppliers.message,
@@ -59,9 +63,13 @@ export async function GET(req: NextRequest, res:NextResponse) {
 
 export async function POST(req: NextRequest, res:NextResponse) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await req.json();
     const validatedData = createSupplierSchema.parse(body);
-    const newSupplier = await db.supplier.create({ data: validatedData });
+    const newSupplier = await createSupplier(validatedData, userId);
     const successResponse = {
       success: true,
       message: 'Supplier created successfully',
@@ -74,24 +82,12 @@ export async function POST(req: NextRequest, res:NextResponse) {
   }
 }
 
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'Supplier ID is required' }, { status: 400 });
-    }
-
-    await deleteSupplier(id);
-    return NextResponse.json(null, { status: HTTPS_CODES.NO_CONTENT });
-  } catch (e) {
-    const error = createApiError({ error: e });
-    return NextResponse.json(error, { status: error.code });
-  }
-}
 export async function PUT(req: NextRequest, res: NextResponse) {
   try {
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
@@ -102,7 +98,7 @@ export async function PUT(req: NextRequest, res: NextResponse) {
 
     createSupplierSchema.parse(body);
 
-    const updatedSupplier = await updateSupplier(id, body);
+    const updatedSupplier = await updateSupplier(id, body, userId!);
 
     const successResponse = {
       success: true,
@@ -114,4 +110,26 @@ export async function PUT(req: NextRequest, res: NextResponse) {
     const error = createApiError({ error: e });
     return NextResponse.json(error, { status: error.code });
   }
+}
+
+export async function DELETE(
+  req: NextRequest,
+): Promise<NextResponse> {
+  const userId = await getUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({
+      status: 400,
+      success: false,
+      message: 'Supplier ID is required',
+    }, { status: 400 });
+  }
+
+  const result = await deleteSupplier(id, userId!);
+  return NextResponse.json(result, { status: result.status });
 }

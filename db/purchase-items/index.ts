@@ -10,8 +10,7 @@ export const getPurchaseItemsByInvoiceId = async (purchaseInvoiceId: string) => 
         product: true,
       },
     });
-  } catch (error) {
-    console.error('Error fetching purchase items by invoice ID:', error);
+  } catch {
     throw new Error('Failed to fetch purchase items.');
   }
 };

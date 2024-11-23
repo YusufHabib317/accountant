@@ -1,217 +1,291 @@
-/* eslint-disable max-len */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-array-index-key */
 
 'use client';
 
-import {
-  Card, CardContent, CardHeader, CardTitle,
-} from '@/components/ui/card';
-import { getStaticsQuery } from '@/query/statics';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { useSession } from '@/lib/auth-client';
 import dayjs from 'dayjs';
 import {
-  Key,
-} from 'react';
-import { useSession } from '@/lib/auth-client';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DollarSign,
+  Users,
+  ClipboardList,
+  Receipt,
+  PiggyBank,
+  CreditCard,
+} from 'lucide-react';
+import { getStaticsQuery } from '@/query/statics';
 
-export default function StaticsPage() {
-  const { data: session, isPending } = useSession();
-
-  const { data, isLoading } = useQuery(
-    getStaticsQuery(),
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+}) {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {description}
+        </p>
+        )}
+      </CardContent>
+    </Card>
   );
+}
 
-  if (isLoading || isPending) {
+function LoadingCard() {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <Skeleton className="h-4 w-32" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-8 w-24" />
+        <Skeleton className="h-4 w-48 mt-2" />
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function StatisticsPage() {
+  const { data: session, isPending: sessionLoading } = useSession();
+  const { data: statsData, isLoading: dataLoading } = useQuery(getStaticsQuery());
+
+  const isLoading = sessionLoading || dataLoading;
+
+  if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-80px)]">
-        <Loader2 className="animate-spin" />
+      <div className="p-6">
+        <div className="mb-8">
+          <Skeleton className="h-12 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <LoadingCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }
 
+  const stats = statsData?.details?.data;
+
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       {session?.user && (
-      <div className="flex gap-5 items-center">
-        <p className="text-[3rem] text-sky-600 font-extrabold">Welcome</p>
-        <Badge className="mt-2 text-[1rem]">
-          <span className="font-extrabold">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mb-8">
+          <h1 className="text-4xl font-bold text-sky-600">
+            Welcome Back
+          </h1>
+          <Badge variant="secondary" className="text-base px-4 py-1">
             {session.user.email}
-          </span>
-        </Badge>
-      </div>
+          </Badge>
+        </div>
       )}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Suppliers */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Suppliers</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Total Suppliers:
-              <strong>{data?.details?.data?.suppliersCount}</strong>
-            </p>
-          </CardContent>
-        </Card>
 
-        {/* Purchase Invoices */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Purchase Invoices</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Total Invoices:
-              <strong>{data?.details?.data?.purchaseInvoiceStats.totalInvoices}</strong>
-            </p>
-            <p>
-              Total Amount:
-              <strong>
-                $
-                {data?.details?.data?.purchaseInvoiceStats.totalAmount}
-              </strong>
-            </p>
-            <p>
-              Total Paid:
-              <strong>
-                $
-                {data?.details?.data?.purchaseInvoiceStats.totalPaid}
-              </strong>
-            </p>
-            <p>
-              Total Remaining:
-              <strong>
-                $
-                {data?.details?.data?.purchaseInvoiceStats.totalRemaining}
-              </strong>
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard
+          title="Total Suppliers"
+          value={stats?.suppliersCount || 0}
+          icon={Users}
+          description="Active suppliers in your network"
+        />
 
-        {/* Sale Invoices */}
-        <Card className="mb-4">
+        <Card className="row-span-2">
           <CardHeader>
-            <CardTitle>Sale Invoices</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Purchase Overview
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p>
-              Total Invoices:
-              <strong>{data?.details?.data?.saleInvoiceStats.totalInvoices}</strong>
-            </p>
-            <p>
-              Total Amount:
-              <strong>
-                $
-                {data?.details?.data?.saleInvoiceStats.totalAmount}
-              </strong>
-            </p>
-            <p>
-              Total Paid:
-              <strong>
-                $
-                {data?.details?.data?.saleInvoiceStats.totalPaid}
-              </strong>
-            </p>
-            <p>
-              Total Remaining:
-              <strong>
-                $
-                {data?.details?.data?.saleInvoiceStats.totalRemaining}
-              </strong>
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Expenses */}
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Expenses</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>
-              Total Expenses:
-              <strong>{data?.details?.data?.expenseStats.totalExpenses}</strong>
-            </p>
-            <p>
-              Total Amount:
-              <strong>
-                $
-                {data?.details?.data?.expenseStats.totalAmount}
-              </strong>
-            </p>
+          <CardContent className="space-y-2">
             <div>
-              <h3 className="mt-2">By Category:</h3>
-              <ul className="list-disc ml-5">
-                {Object.entries(data?.details?.data?.expenseStats.byCategory).map(([category, amount]) => (
-                  <li key={category}>
-                    {category}
-                    :
-                    {' '}
-                    <strong>
-                      $
-                      {amount as React.ReactNode}
-                    </strong>
-                  </li>
-                ))}
-              </ul>
+              <span className="text-muted-foreground">Total Invoices:</span>
+              <span className="font-bold ml-2">{stats?.purchaseInvoiceStats.totalInvoices}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Total Amount:</span>
+              <span className="font-bold ml-2">
+                $
+                {stats?.purchaseInvoiceStats.totalAmount}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Paid:</span>
+              <span className="font-bold ml-2 text-green-600">
+                $
+                {stats?.purchaseInvoiceStats.totalPaid}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Remaining:</span>
+              <span className="font-bold ml-2 text-red-500">
+                $
+                {stats?.purchaseInvoiceStats.totalRemaining}
+              </span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Payments */}
-        <Card className="mb-4">
+        <Card className="row-span-2">
           <CardHeader>
-            <CardTitle>Payments</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Sales Overview
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p>
-              Total Payments:
-              <strong>{data?.details?.data?.paymentStats.totalPayments}</strong>
-            </p>
-            <p>
-              Total Amount:
-              <strong>
-                $
-                {data?.details?.data?.paymentStats.totalAmount}
-              </strong>
-            </p>
+          <CardContent className="space-y-2">
             <div>
-              <h3 className="mt-2">By Type:</h3>
-              <ul className="list-disc ml-5">
-                {Object.entries(data?.details?.data?.paymentStats.byType).map(([type, amount]) => (
-                  <li key={type}>
-                    {type}
-                    :
-                    {' '}
-                    <strong>
-                      $
-                      {amount as React.ReactNode}
-                    </strong>
-                  </li>
-                ))}
-              </ul>
+              <span className="text-muted-foreground">Total Invoices:</span>
+              <span className="font-bold ml-2">{stats?.saleInvoiceStats.totalInvoices}</span>
             </div>
             <div>
-              <h3 className="mt-2">Recent Payments:</h3>
-              <ul className="list-disc ml-5">
-                {data?.details?.data?.paymentStats.recentPayments.map((payment: any, index: Key) => (
-                  <li key={index}>
-                    {dayjs(payment.date).format('DD/MM/YYYY')}
-                    {' '}
-                    -
-                    {payment.type}
-                    :
-                    <strong>
+              <span className="text-muted-foreground">Total Amount:</span>
+              <span className="font-bold ml-2">
+                $
+                {stats?.saleInvoiceStats.totalAmount}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Paid:</span>
+              <span className="font-bold ml-2 text-green-600">
+                $
+                {stats?.saleInvoiceStats.totalPaid}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Remaining:</span>
+              <span className="font-bold ml-2 text-red-500">
+                $
+                {stats?.saleInvoiceStats.totalRemaining}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="row-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PiggyBank className="h-5 w-5" />
+              Expenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 mb-4">
+              <div>
+                <span className="text-muted-foreground">Total Expenses:</span>
+                <span className="font-bold ml-2">{stats?.expenseStats.totalExpenses}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Total Amount:</span>
+                <span className="font-bold ml-2">
+                  $
+                  {stats?.expenseStats.totalAmount}
+                </span>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">By Category</h4>
+              <div className="space-y-1">
+                {Object.entries(stats?.expenseStats.byCategory || {}).map(([category, amount]) => (
+                  <div key={category} className="flex justify-between">
+                    <span className="text-muted-foreground">{category}</span>
+                    <span className="font-medium">
                       $
-                      {payment.amount}
-                    </strong>
-                  </li>
+                      {amount as React.ReactNode}
+                    </span>
+                  </div>
                 ))}
-              </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Recent Payments
+            </CardTitle>
+            <CardDescription>
+              Latest payment transactions across all categories
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">Payment Overview</h4>
+                  <div className="space-y-1">
+                    <div>
+                      <span className="text-muted-foreground">Total Payments:</span>
+                      <span className="font-bold ml-2">{stats?.paymentStats.totalPayments}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total Amount:</span>
+                      <span className="font-bold ml-2">
+                        $
+                        {stats?.paymentStats.totalAmount}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">By Type</h4>
+                  <div className="space-y-1">
+                    {Object.entries(stats?.paymentStats.byType || {}).map(([type, amount]) => (
+                      <div key={type} className="flex justify-between">
+                        <span className="text-muted-foreground">{type.replace('_', ' ')}</span>
+                        <span className="font-medium">
+                          $
+                          {amount as React.ReactNode}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">Recent Transactions</h4>
+                <div className="space-y-2">
+                  {stats?.paymentStats.recentPayments.map((payment: any, index: any) => (
+                    <div key={index} className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{payment.type.replace('_', ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-muted-foreground">
+                          {dayjs(payment.date).format('DD/MM/YYYY')}
+                        </span>
+                        <span className="font-bold">
+                          $
+                          {payment.amount}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

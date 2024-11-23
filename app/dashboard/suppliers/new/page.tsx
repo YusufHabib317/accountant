@@ -1,7 +1,7 @@
-import ProductForm from '@/components/products/product-form';
+import SupplierForm from '@/components/suppliers/supplier-form';
 
 export default function SupplierCreate() {
   return (
-    <div><ProductForm mode="create" productData={undefined} /></div>
+    <div><SupplierForm mode="create" supplierData={undefined} /></div>
   );
 }

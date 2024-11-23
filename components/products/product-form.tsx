@@ -45,7 +45,7 @@ export default function ProductForm(props: ProductFormProps) {
     defaultValues: serializer(productData, mode),
   });
 
-  const { mutate: createMutate, isPending: isLoadingCreate } = useMutation({
+  const { mutate: createMutate, isLoading: isLoadingCreate } = useMutation({
     mutationFn: creteProductMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -67,7 +67,7 @@ export default function ProductForm(props: ProductFormProps) {
     },
   });
 
-  const { mutate: updateMutate, isPending: isLoadingUpdate } = useMutation({
+  const { mutate: updateMutate, isLoading: isLoadingUpdate } = useMutation({
     mutationFn: updateProductMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -88,7 +88,7 @@ export default function ProductForm(props: ProductFormProps) {
     },
   });
 
-  const isLoading = isLoadingUpdate || isLoadingCreate;
+  const isLoadingPage = isLoadingUpdate || isLoadingCreate;
 
   const onSubmit = async (values: FormData) => {
     try {
@@ -114,7 +114,7 @@ export default function ProductForm(props: ProductFormProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="flex justify-end">
-            <Button type="submit" disabled={isLoading} isLoading={isLoading}>
+            <Button type="submit" disabled={isLoadingPage} isLoading={isLoadingPage}>
               {mode === 'create' ? 'Create' : 'Update'}
             </Button>
           </div>

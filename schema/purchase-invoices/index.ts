@@ -71,8 +71,14 @@ export const createPurchaseSchema = z.object({
   notes: z.string().optional(),
   supplierId: z.string(),
 });
-
 export const createPurchaseSchemaWithRefinements = createPurchaseSchema
+  .refine(
+    (data) => !!data.supplierId,
+    {
+      message: 'Supplier is required',
+      path: ['supplierId'],
+    },
+  )
   .refine(
     (data) => Math.abs(data.total - (data.subtotal + (data.tax || 0))) < 0.01,
     {

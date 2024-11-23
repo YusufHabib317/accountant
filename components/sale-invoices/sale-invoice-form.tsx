@@ -51,7 +51,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
 
   const form = useForm<FormData>({
     resolver: zodResolver(mode === 'update' ? updateSaleSchema : createSaleSchema),
-    defaultValues: serializer(saleInvoiceData, mode),
+    defaultValues: serializer(saleInvoiceData, mode, products),
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -59,13 +59,11 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
     name: 'items',
   });
 
-  const { mutate: createMutate, isPending: isLoadingCreate } = useMutation({
+  const { mutate: createMutate, isLoading: isLoadingCreate } = useMutation({
     mutationFn: creteSaleInvoiceMutation().mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['sale-invoice-create'],
-        exact: true,
-      });
+      queryClient.invalidateQueries(['sale-invoice-update']);
+      // queryClient.invalidateQueries(['products']);
       router.push(ROUTES.saleInvoice.path);
       toast({
         title: 'Success',
@@ -81,17 +79,15 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
     },
   });
 
-  const { mutate: updateMutate, isPending: isLoadingUpdate } = useMutation({
+  const { mutate: updateMutate, isLoading: isLoadingUpdate } = useMutation({
     mutationFn: updateSaleInvoiceMutation().mutationFn,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['sale-invoice-update'],
-        exact: true,
-      });
+      queryClient.refetchQueries(['sale-invoice-update']);
       toast({
         title: 'Success',
         description: 'Sale invoice updated',
       });
+      window.location.reload();
     },
     onError: (error) => {
       toast({
@@ -147,6 +143,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
     const product = products?.find((p) => p.id === productId);
     if (product) {
       form.setValue(`items.${index}.price`, product.price);
+      form.setValue(`items.${index}.stock`, product.stock);
       calculateItemTotal(index);
     }
   };
@@ -201,14 +198,14 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
             />
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 border bg-slate-900 rounded-md p-5">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-semibold">Items</h3>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => append({
-                  productId: '', quantity: 0, price: 0, total: 0,
+                  productId: '', quantity: 0, price: 0, stock: 0, total: 0,
                 })}
               >
                 Add Item
@@ -221,6 +218,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                   <TableHead>Product</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead />
                 </TableRow>
@@ -260,15 +258,22 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                       <FormField
                         control={form.control}
                         name={`items.${index}.quantity`}
-                        render={({ field }) => (
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                              calculateItemTotal(index);
-                            }}
-                          />
+                        render={({ field, fieldState }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(Number(e.target.value));
+                                  calculateItemTotal(index);
+                                }}
+                              />
+                            </FormControl>
+                            {fieldState.error?.message && (
+                            <FormMessage>{fieldState.error.message}</FormMessage>
+                            )}
+                          </FormItem>
                         )}
                       />
                     </TableCell>
@@ -277,15 +282,16 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                         control={form.control}
                         name={`items.${index}.price`}
                         render={({ field }) => (
-                          <Input
-                            type="number"
-                            readOnly
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                              calculateItemTotal(index);
-                            }}
-                          />
+                          <Input type="number" readOnly {...field} disabled />
+                        )}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.stock`}
+                        render={({ field }) => (
+                          <Input type="number" readOnly {...field} disabled />
                         )}
                       />
                     </TableCell>
@@ -294,7 +300,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                         control={form.control}
                         name={`items.${index}.total`}
                         render={({ field }) => (
-                          <Input type="number" {...field} readOnly />
+                          <Input type="number" readOnly {...field} disabled />
                         )}
                       />
                     </TableCell>
@@ -323,7 +329,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Subtotal</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -358,7 +364,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Total</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -393,7 +399,7 @@ export default function SaleInvoiceForm(props: SaleInvoiceFormProps) {
                 <FormItem>
                   <FormLabel>Remaining</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} readOnly />
+                    <Input type="number" {...field} readOnly disabled />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -22,8 +22,7 @@ export const loginValidation = async (email: string) => {
     return {
       success: true,
     };
-  } catch (error) {
-    console.log('🚀 ~ loginValidation ~ error:', error);
+  } catch {
     return {
       success: false,
       message: 'something went wrong',

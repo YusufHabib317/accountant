@@ -1,6 +1,6 @@
 'use client';
 
-import ProductForm from '@/components/suppliers/supplier-form';
+import SupplierForm from '@/components/suppliers/supplier-form';
 import { getSupplierQuery } from '@/query/suppliers';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -12,9 +12,13 @@ export default function Supplier() {
   const { data, isLoading } = useQuery(getSupplierQuery(id ? `${id}` : ''));
 
   if (isLoading) {
-    return <div className="h-screen"><Loader2 className="animate-spin" /></div>;
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-80px)]">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
   }
   return (
-    <div><ProductForm mode="update" supplierData={data.details.data} /></div>
+    <div><SupplierForm mode="update" supplierData={data.details.data} /></div>
   );
 }

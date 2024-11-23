@@ -21,6 +21,13 @@ model User {
   Account          Account[]
   twoFactorEnabled Boolean?
 
+  Expense         Expense[]
+  Payment         Payment[]
+  SaleInvoice     SaleInvoice[]
+  PurchaseInvoice PurchaseInvoice[]
+  Product         Product[]
+  Supplier        Supplier[]
+
   @@unique([email])
   @@map("user_app")
 }
@@ -63,18 +70,20 @@ model Verification {
 model Supplier {
   id               String            @id @default(cuid())
   name             String
-  contactInfo      String            @map("contact_info")
   phone            String?
   address          String?
   city             String?
   email            String?
   companyName      String?           @map("company_name")
-  contactPerson    String?           @map("contact_person")
+  notes            String?
   products         Product[]
   purchaseInvoices PurchaseInvoice[]
-  notes            String?
-  createdAt        DateTime          @default(now()) @map("created_at")
-  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("suppliers")
 }
@@ -91,26 +100,30 @@ model Product {
   saleItems     SaleItem[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [id])
   Supplier      Supplier[]
 
   @@map("products")
 }
 
 model PurchaseInvoice {
-  id           String         @id @default(cuid())
-  date         DateTime       @default(now())
-  subtotal     Float
-  tax          Float          @default(0)
-  total        Float
-  paid         Float          @default(0)
-  remaining    Float          @default(0)
-  notes        String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  supplierId   String         @map("supplier_id")
-  items        PurchaseItem[]
-  supplier     Supplier       @relation(fields: [supplierId], references: [id])
-  Payment      Payment[]
+  id         String         @id @default(cuid())
+  date       DateTime       @default(now())
+  subtotal   Float
+  tax        Float          @default(0)
+  total      Float
+  paid       Float          @default(0)
+  remaining  Float          @default(0)
+  notes      String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  supplierId String         @map("supplier_id")
+  userId     String         @map("user_id")
+  user       User           @relation(fields: [userId], references: [id])
+  items      PurchaseItem[]
+  supplier   Supplier       @relation(fields: [supplierId], references: [id])
+  Payment    Payment[]
 
   @@map("purchase_invoices")
 }
@@ -129,19 +142,21 @@ model PurchaseItem {
 }
 
 model SaleInvoice {
-  id            String     @id @default(cuid())
-  date          DateTime   @default(now())
-  customerName  String? @map("customer_name")
-  items         SaleItem[]
-  subtotal      Float
-  tax           Float      @default(0)
-  total         Float
-  paid          Float      @default(0)
-  remaining     Float      @default(0)
-  notes         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  Payment       Payment[]
+  id           String     @id @default(cuid())
+  date         DateTime   @default(now())
+  customerName String?    @map("customer_name")
+  items        SaleItem[]
+  subtotal     Float
+  tax          Float      @default(0)
+  total        Float
+  paid         Float      @default(0)
+  remaining    Float      @default(0)
+  notes        String?
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  Payment      Payment[]
 
   @@map("sale_invoices")
 }
@@ -174,6 +189,8 @@ model Payment {
   purchaseInvoice   PurchaseInvoice? @relation(fields: [purchaseInvoiceId], references: [id])
   purchaseInvoiceId String?
   notes             String?
+  userId            String           @map("user_id")
+  user              User             @relation(fields: [userId], references: [id])
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -185,8 +202,10 @@ model Expense {
   name      String
   category  String
   amount    Float
-  date      DateTime @default(now())
+  date      DateTime
   notes     String?
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

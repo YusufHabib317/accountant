@@ -2,8 +2,6 @@ import {
   BarChart2,
   UserPlus,
   Box,
-  Receipt,
-  // FileText,
   Wallet,
   BadgeDollarSign,
   ShoppingBasket,
@@ -38,31 +36,23 @@ export const ROUTES = {
     path: '/dashboard/statics',
   },
   supplier: {
-    key: 'Supplier',
+    key: 'Suppliers',
     path: '/dashboard/suppliers',
   },
   product: {
-    key: 'Product',
+    key: 'Products',
     path: '/dashboard/products',
   },
   purchaseInvoice: {
-    key: 'Purchase Invoice',
+    key: 'Purchase Invoices',
     path: '/dashboard/purchase-invoices',
   },
   saleInvoice: {
     key: 'Sale Invoice',
     path: '/dashboard/sale-invoices',
   },
-  payment: {
-    key: 'Payment',
-    path: '/dashboard/payments',
-  },
-  // auditLog: {
-  //   key: 'Audit Log',
-  //   path: '/dashboard/auditLog',
-  // },
   expense: {
-    key: 'Expense',
+    key: 'Expenses',
     path: '/dashboard/expenses',
   },
 };
@@ -93,18 +83,8 @@ export const links = [
     href: ROUTES.saleInvoice.path,
   },
   {
-    label: ROUTES.payment.key,
-    icon: Receipt,
-    href: ROUTES.payment.path,
-  },
-  {
     label: ROUTES.expense.key,
     icon: Wallet,
     href: ROUTES.expense.path,
   },
-  // {
-  //   label: ROUTES.auditLog.key,
-  //   icon: FileText,
-  //   href: ROUTES.auditLog.path,
-  // },
 ];

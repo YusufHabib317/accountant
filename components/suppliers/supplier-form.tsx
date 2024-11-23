@@ -40,7 +40,7 @@ export default function SupplierForm(props:SupplierFormProps) {
     defaultValues: serializer(supplierData, mode),
   });
 
-  const { mutate: createMutate, isPending: isLoadingCreate } = useMutation({
+  const { mutate: createMutate, isLoading: isLoadingCreate } = useMutation({
     mutationFn: creteSupplierMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -55,7 +55,7 @@ export default function SupplierForm(props:SupplierFormProps) {
     },
   });
 
-  const { mutate: updateMutate, isPending: isLoadingUpdate } = useMutation({
+  const { mutate: updateMutate, isLoading: isLoadingUpdate } = useMutation({
     mutationFn: updateSupplierMutation().mutationFn,
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -112,20 +112,6 @@ export default function SupplierForm(props:SupplierFormProps) {
                       placeholder="Supplier Name"
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactInfo"
-              defaultValue="contactInfo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Info</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contact Information" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -196,20 +182,6 @@ export default function SupplierForm(props:SupplierFormProps) {
                   <FormLabel>Company Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Company Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="contactPerson"
-              defaultValue="contactPerson"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contact Person</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Contact Person" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

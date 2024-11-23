@@ -45,8 +45,15 @@ const createSaleItemSchema = z.object({
   productId: z.string().min(1, 'Product ID is required'),
   price: z.number().positive('Price must be positive'),
   quantity: z.number().int().positive('Quantity must be a positive integer'),
+  stock: z.number().int(),
   total: z.number().positive('Total must be positive'),
-});
+}).refine(
+  (data) => data.quantity <= data.stock,
+  {
+    message: 'Quantity cannot exceed available stock',
+    path: ['quantity'],
+  },
+);
 
 export const createSaleSchema = z.object({
   customerName: z.string().min(3, { message: 'Customer name require' }),
@@ -109,10 +116,17 @@ export const createSaleSchemaWithRefinements = createSaleSchema
 const updateSaleItemSchema = z.object({
   id: z.string().optional(),
   productId: z.string().min(1, 'Product ID is required'),
-  quantity: z.number().int().positive('Quantity must be a positive integer'),
   price: z.number().positive('Price must be positive'),
+  quantity: z.number().int().positive('Quantity must be a positive integer'),
+  stock: z.number().int(),
   total: z.number().positive('Total must be positive'),
-});
+}).refine(
+  (data) => data.quantity <= data.stock,
+  {
+    message: 'Quantity cannot exceed available stock',
+    path: ['quantity'],
+  },
+);
 
 export const updateSaleSchema = z.object({
   customerName: z.string().min(3, { message: 'Customer name require' }).optional(),

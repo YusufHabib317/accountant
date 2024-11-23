@@ -9,6 +9,7 @@ enum queryKeys {
   supplier = 'supplier',
   create = 'create',
   update = 'update',
+  delete = 'supplier-delete',
 }
 
 // get suppliers
@@ -83,4 +84,22 @@ const updateSupplierRequest = ({ id, body }: { id:string, body: supplierFormRequ
 export const updateSupplierMutation = () => ({
   mutationKey: [queryKeys.update],
   mutationFn: updateSupplierRequest,
+});
+
+// delete
+const deleteSupplierRequest = (id: string) => ApiClient.delete(apiEndpoints.suppliersByIdAsParams(id))
+  .then((res) => res.data)
+  .catch((err) => {
+    handleApiError(err);
+    throw err.response.data;
+  });
+export const deleteSupplierMutation = (id: string) => ({
+  mutationKey: ['supplier-delete', id],
+  mutationFn: async () => {
+    const response = await deleteSupplierRequest(id);
+    if (!response) {
+      throw new Error('Failed to delete supplier');
+    }
+    return response;
+  },
 });

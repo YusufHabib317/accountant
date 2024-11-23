@@ -1,13 +1,16 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-await-in-loop */
 /* eslint-disable complexity */
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { db } from '@/lib/db';
 import { PurchaseInvoiceCreateFormWithRefines, PurchaseInvoiceUpdateForm } from '@/query/purchase-invoice/types';
 import { getPurchaseInvoiceSchema } from '@/schema/purchase-invoices';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-export const getPurchaseInvoices = async (req: NextRequest) => {
+export const getPurchaseInvoices = async (req: NextRequest, userId:string) => {
   try {
     const queryParams = Object.fromEntries(req.nextUrl.searchParams.entries());
 
@@ -20,7 +23,7 @@ export const getPurchaseInvoices = async (req: NextRequest) => {
       pageSize,
     } = getPurchaseInvoiceSchema.parse(queryParams);
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { userId };
 
     if (search) {
       where.OR = [{ name: { contains: search, mode: 'insensitive' } }];
@@ -67,9 +70,9 @@ export const getPurchaseInvoices = async (req: NextRequest) => {
     };
   }
 };
-export async function getPurchaseInvoiceById(id: string) {
+export async function getPurchaseInvoiceById(id: string, userId:string) {
   const product = await db.purchaseInvoice.findUnique({
-    where: { id },
+    where: { id, userId },
     include: { items: true },
   });
   return {
@@ -77,155 +80,171 @@ export async function getPurchaseInvoiceById(id: string) {
     details: product,
   };
 }
-
-// export async function createPurchaseInvoice(data: PurchaseInvoiceCreateFormWithRefines) {
-//   await db.purchaseInvoice.create({
-//     data: {
-//       date: new Date(data.date || new Date()),
-//       subtotal: data.subtotal,
-//       tax: data.tax,
-//       total: data.total,
-//       paid: data.paid,
-//       remaining: data.remaining,
-//       notes: data.notes,
-//       items: {
-//         create: data.items.map((item) => ({
-//           productId: item.productId,
-//           quantity: item.quantity,
-//           cost: item.cost,
-//           total: item.total,
-//         })),
-//       },
-//       supplier: {
-//         connect: { id: data.supplierId },
-//       },
-//     },
-//     include: {
-//       items: {
-//         include: {
-//           product: true,
-//         },
-//       },
-//       supplier: true,
-//     },
-//   });
-// }
-
-export async function createPurchaseInvoice(data: PurchaseInvoiceCreateFormWithRefines) {
+export async function createPurchaseInvoice(data: PurchaseInvoiceCreateFormWithRefines, userId: string) {
   try {
-    const purchaseInvoice = await db.purchaseInvoice.create({
-      data: {
-        date: data.date,
-        subtotal: data.subtotal,
-        tax: data.tax,
-        total: data.total,
-        paid: data.paid,
-        remaining: data.total - data.paid,
-        notes: data.notes,
-        items: {
-          create: data.items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            cost: item.cost,
-            total: item.total,
-          })),
-        },
-        supplier: {
-          connect: { id: data.supplierId },
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
+    return await db.$transaction(async (prisma) => {
+      const purchaseInvoice = await prisma.purchaseInvoice.create({
+        data: {
+          userId,
+          date: data.date,
+          subtotal: data.subtotal,
+          tax: data.tax,
+          total: data.total,
+          paid: data.paid,
+          remaining: data.total - data.paid,
+          notes: data.notes,
+          supplierId: data.supplierId,
+          items: {
+            create: data.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              cost: item.cost,
+              total: item.total,
+            })),
           },
         },
-        supplier: true,
-      },
-    });
-
-    if (data.paid > 0) {
-      await db.payment.create({
-        data: {
-          amount: data.paid,
-          type: 'SUPPLIER_PAYMENT',
-          purchaseInvoiceId: purchaseInvoice.id,
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+          supplier: true,
         },
       });
-    }
 
-    return purchaseInvoice;
+      for (const item of data.items) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              increment: item.quantity,
+            },
+          },
+        });
+      }
+
+      if (data.paid > 0) {
+        await prisma.payment.create({
+          data: {
+            userId,
+            amount: data.paid,
+            type: 'SUPPLIER_PAYMENT',
+            purchaseInvoiceId: purchaseInvoice.id,
+          },
+        });
+      }
+
+      return purchaseInvoice;
+    }, {
+      timeout: 10000,
+    });
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to create purchase invoice: ${error.message}`);
     }
-    throw new Error('something went wrong');
+    throw new Error('Something went wrong');
   }
 }
 
-export async function updatePurchaseInvoice(id: string, data: PurchaseInvoiceUpdateForm) {
+export async function updatePurchaseInvoice(id: string, data: PurchaseInvoiceUpdateForm, userId: string) {
   try {
-    const existingInvoice = await db.purchaseInvoice.findUnique({
-      where: { id },
-      include: { items: true },
-    });
+    const stockAdjustments: { productId: string; quantityChange: number; }[] = [];
+    await db.$transaction(async (prisma) => {
+      const existingInvoice = await prisma.purchaseInvoice.findUnique({
+        where: { id, userId },
+        include: { items: true },
+      });
 
-    if (!existingInvoice) {
-      throw new Error('Purchase invoice not found');
-    }
+      if (!existingInvoice) {
+        throw new Error('Purchase invoice not found');
+      }
 
-    const total = data.total ?? existingInvoice.total;
-    const paid = data.paid ?? existingInvoice.paid;
-    const remaining = total - paid;
+      const total = data.total ?? existingInvoice.total;
+      const paid = data.paid ?? existingInvoice.paid;
+      const remaining = total - paid;
 
-    const paymentDifference = paid - existingInvoice.paid;
+      const paymentDifference = paid - existingInvoice.paid;
 
-    if (paymentDifference !== 0) {
-      await db.payment.create({
+      if (paymentDifference !== 0) {
+        await prisma.payment.create({
+          data: {
+            userId,
+            amount: paymentDifference,
+            type: 'SUPPLIER_PAYMENT',
+            purchaseInvoiceId: id,
+          },
+        });
+      }
+
+      const itemsToDelete = existingInvoice.items.filter(
+        (item) => !data.items?.some((newItem) => newItem.id === item.id),
+      );
+      for (const item of itemsToDelete) {
+        stockAdjustments.push({
+          productId: item.productId,
+          quantityChange: -item.quantity,
+        });
+      }
+
+      const itemsToUpdate = data.items?.filter((item) => item.id) || [];
+      for (const item of itemsToUpdate) {
+        const existingItem = existingInvoice.items.find((i) => i.id === item.id);
+        if (existingItem) {
+          const quantityDifference = item.quantity - existingItem.quantity;
+          stockAdjustments.push({
+            productId: item.productId,
+            quantityChange: quantityDifference,
+          });
+        }
+      }
+
+      const itemsToCreate = data.items?.filter((item) => !item.id) || [];
+      for (const item of itemsToCreate) {
+        stockAdjustments.push({
+          productId: item.productId,
+          quantityChange: item.quantity,
+        });
+      }
+
+      const itemsUpdate = {
+        deleteMany: { id: { notIn: data.items?.map((item) => item.id || '') || [] } },
+        upsert: data.items?.map((item) => ({
+          where: { id: item.id || 'new-item' },
+          create: { ...item },
+          update: { ...item },
+        })) || [],
+      };
+
+      let supplierUpdate = {};
+      if (data.supplierId) {
+        supplierUpdate = {
+          connect: { id: data.supplierId },
+        };
+      }
+
+      await prisma.purchaseInvoice.update({
+        where: { id, userId },
         data: {
-          amount: paymentDifference,
-          type: 'SUPPLIER_PAYMENT',
-          purchaseInvoiceId: id,
+          ...(data.date && { date: data.date }),
+          ...(data.subtotal !== undefined && { subtotal: data.subtotal }),
+          ...(data.tax !== undefined && { tax: data.tax }),
+          ...(data.total !== undefined && { total }),
+          ...(data.paid !== undefined && { paid }),
+          ...(data.remaining !== undefined && { remaining }),
+          ...(data.notes !== undefined && { notes: data.notes }),
+          ...(data.items && { items: itemsUpdate }),
+          ...(data.supplierId && { supplier: supplierUpdate }),
         },
       });
-    }
-
-    const itemsUpdate = {
-      deleteMany: { id: { notIn: data.items?.map((item) => item.id || '') || [] } },
-      upsert: data.items?.map((item) => ({
-        where: { id: item.id || 'new-item' },
-        create: { ...item },
-        update: { ...item },
-      })) || [],
-    };
-
-    let supplierUpdate = {};
-    if (data.supplierId) {
-      supplierUpdate = {
-        connect: { id: data.supplierId },
-      };
-    }
-
-    return db.purchaseInvoice.update({
-      where: { id },
-      data: {
-        ...(data.date && { date: data.date }),
-        ...(data.subtotal !== undefined && { subtotal: data.subtotal }),
-        ...(data.tax !== undefined && { tax: data.tax }),
-        ...(data.total !== undefined && { total }),
-        ...(data.paid !== undefined && { paid }),
-        ...(data.remaining !== undefined && { remaining }),
-        ...(data.notes !== undefined && { notes: data.notes }),
-        ...(data.items && { items: itemsUpdate }),
-        ...(data.supplierId && { supplier: supplierUpdate }),
-      },
-      include: {
-        items: {
-          include: { product: true },
-        },
-        supplier: true,
-      },
     });
+
+    for (const adjustment of stockAdjustments) {
+      await db.product.update({
+        where: { id: adjustment.productId },
+        data: { stock: { increment: adjustment.quantityChange } },
+      });
+    }
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to update purchase invoice: ${error.message}`);
@@ -234,7 +253,7 @@ export async function updatePurchaseInvoice(id: string, data: PurchaseInvoiceUpd
   }
 }
 
-export async function deletePurchaseInvoice(id: string) {
+export async function deletePurchaseInvoice(id: string, userId:string) {
   return db.purchaseInvoice.delete({
     where: { id },
   });

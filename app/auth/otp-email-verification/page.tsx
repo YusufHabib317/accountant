@@ -95,7 +95,7 @@ export default function VerifyEmailPage() {
     <Suspense fallback={<div>Loading...</div>}>
       <div className="container my-10">
         <Card className="p-6 md:p-5 mt-5 mx-auto max-w-[500px]">
-          <p className="text-gray-500 text-center my-10 text-2xl">
+          <p className="text-center my-10 text-2xl">
             Enter
             {' '}
             <span className="text-emerald-500 font-bold underline">OTP</span>
@@ -123,7 +123,6 @@ export default function VerifyEmailPage() {
               <Button
                 onClick={handleVerifyOtp}
                 disabled={otp.length !== 6 || isLoadingVerify}
-                variant="default"
                 className="w-40 mx-auto"
               >
                 {isLoadingVerify ? 'Verifying...' : 'Verify'}
@@ -131,17 +130,16 @@ export default function VerifyEmailPage() {
               <Button
                 onClick={handleSendOtp}
                 disabled={isLoadingResend}
-                variant="default"
                 className="w-40 mx-auto"
               >
                 {isLoadingResend ? 'Resending Otp...' : ' Resend otp'}
               </Button>
-              <div className=" flex justify-center items-center w-60 mx-auto">
-                <Link href="https://mail.google.com/mail/u/0/" target="_blank" className="bg-gray-200 p-1 rounded-sm">
-                  Open Mail
-                </Link>
-                <Link href="/auth/login" className="bg-gray-200 p-1 rounded-sm ml-5">
+              <div className=" flex justify-between items-center w-[17rem] mx-auto">
+                <Link href="/auth/login" className="link p-1 rounded-sm underline">
                   Back to Login
+                </Link>
+                <Link href="https://mail.google.com/mail/u/0/" target="_blank" className="link p-1 underline rounded-sm">
+                  Open Mail
                 </Link>
               </div>
             </div>

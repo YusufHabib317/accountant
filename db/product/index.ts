@@ -4,7 +4,7 @@ import { Product } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-export const getProducts = async (req: NextRequest) => {
+export const getProducts = async (req: NextRequest, userId: string) => {
   try {
     const queryParams = Object.fromEntries(req.nextUrl.searchParams.entries());
 
@@ -17,7 +17,7 @@ export const getProducts = async (req: NextRequest) => {
       pageSize,
     } = getProductsSchema.parse(queryParams);
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { userId };
 
     if (search) {
       where.OR = [{ name: { contains: search, mode: 'insensitive' } }];
@@ -61,9 +61,9 @@ export const getProducts = async (req: NextRequest) => {
     };
   }
 };
-export async function getProductById(id: string) {
+export async function getProductById(id: string, userId:string) {
   const product = await db.product.findUnique({
-    where: { id },
+    where: { id, userId },
     // include: { product: true, invoices: true },
   });
   return {
@@ -72,19 +72,27 @@ export async function getProductById(id: string) {
   };
 }
 
-export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) {
-  return db.product.create({ data });
+export async function createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>, userId:string) {
+  if (!userId) {
+    throw new Error('User ID is required to create a supplier');
+  }
+  return db.product.create({
+    data: {
+      ...data,
+      userId,
+    },
+  });
 }
 
-export async function updateProduct(id: string, data: Partial<Product>) {
+export async function updateProduct(id: string, data: Partial<Product>, userId:string) {
   return db.product.update({
-    where: { id },
+    where: { id, userId },
     data,
   });
 }
 
-export async function deleteProduct(id: string) {
+export async function deleteProduct(id: string, userId:string) {
   return db.product.delete({
-    where: { id },
+    where: { id, userId },
   });
 }

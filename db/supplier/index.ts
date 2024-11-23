@@ -1,10 +1,13 @@
+/* eslint-disable sonarjs/no-duplicate-string */
+
 import { db } from '@/lib/db';
+import { supplierFormRequest } from '@/query/suppliers/types';
 import { getSuppliersSchema } from '@/schema/suppliers';
-import { Supplier } from '@prisma/client';
+import { Prisma, Supplier } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
-export const getSuppliers = async (req: NextRequest) => {
+export const getSuppliers = async (req: NextRequest, userId: string) => {
   try {
     const queryParams = Object.fromEntries(req.nextUrl.searchParams.entries());
 
@@ -17,7 +20,7 @@ export const getSuppliers = async (req: NextRequest) => {
       pageSize,
     } = getSuppliersSchema.parse(queryParams);
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { userId };
 
     if (search) {
       where.OR = [{ name: { contains: search, mode: 'insensitive' } }];
@@ -61,9 +64,10 @@ export const getSuppliers = async (req: NextRequest) => {
     };
   }
 };
-export async function getSupplierById(id: string) {
+
+export async function getSupplierById(id: string, userId:string) {
   const supplier = await db.supplier.findUnique({
-    where: { id },
+    where: { id, userId },
     include: { products: true },
   });
   return {
@@ -72,19 +76,108 @@ export async function getSupplierById(id: string) {
   };
 }
 
-export async function createSupplier(data: Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>) {
-  return db.supplier.create({ data });
+export async function createSupplier(data: supplierFormRequest, userId: string) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required to create a supplier');
+    }
+
+    const newSupplier = await db.supplier.create({
+      data: {
+        ...data,
+        id: undefined,
+        userId,
+      },
+    });
+
+    return {
+      status: 201,
+      message: 'Supplier created successfully',
+      data: newSupplier,
+    };
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      return {
+        status: 409,
+        message: 'A supplier with this unique field already exists',
+      };
+    }
+
+    if (e instanceof Error) {
+      return {
+        status: 500,
+        message: 'An unexpected error occurred',
+        details: e.message,
+      };
+    }
+    return {
+      status: 500,
+      message: 'An unexpected error occurred',
+      details: 'something wrong',
+    };
+  }
+}
+export async function deleteSupplier(id: string, userId: string) {
+  try {
+    const deletedSupplier = await db.$transaction(async (tx) => {
+      const supplier = await tx.supplier.findUnique({ where: { id, userId } });
+      if (!supplier) {
+        return {
+          status: 409,
+          success: false,
+          message: 'Supplier not found',
+        };
+      }
+
+      await tx.purchaseInvoice.deleteMany({ where: { supplierId: id } });
+
+      return tx.supplier.delete({ where: { id } });
+    });
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Supplier deleted successfully',
+      data: deletedSupplier,
+    };
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        return {
+          status: 404,
+          success: false,
+          message: `Supplier with ID ${id} not found`,
+        };
+      }
+      if (error.code === 'P2003') {
+        return {
+          status: 409,
+          success: false,
+          message: 'Cannot delete supplier: Still has related records',
+        };
+      }
+    }
+    return {
+      status: 500,
+      success: false,
+      message: 'An unexpected error occurred',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }
 
-export async function updateSupplier(id: string, data: Partial<Supplier>) {
+export async function updateSupplier(id: string, data: Partial<Supplier>, userId: string) {
+  const supplier = await db.supplier.findUnique({ where: { id, userId } });
+  if (!supplier) {
+    return {
+      status: 404,
+      success: false,
+      message: 'Supplier not found or access denied',
+    };
+  }
+
   return db.supplier.update({
-    where: { id },
+    where: { id, userId },
     data,
-  });
-}
-
-export async function deleteSupplier(id: string) {
-  return db.supplier.delete({
-    where: { id },
   });
 }
