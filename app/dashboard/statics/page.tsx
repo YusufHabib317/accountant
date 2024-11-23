@@ -26,12 +26,20 @@ import {
 } from 'lucide-react';
 import { getStaticsQuery } from '@/query/statics';
 
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  // eslint-disable-next-line react/require-default-props
+  description?: string;
+}
+
 function StatCard({
   title,
   value,
   icon: Icon,
   description,
-}) {
+}: StatCardProps) {
   return (
     <Card className="relative overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
