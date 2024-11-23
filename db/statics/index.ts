@@ -1,39 +1,41 @@
 /* eslint-disable no-param-reassign */
-
 import { db } from '@/lib/db';
+import { getUserId } from '@/utils/get-session';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-export const getStatics = async () => {
+export const getStatics = async (req: NextRequest): Promise<NextResponse> => {
   try {
-    const suppliersCount = await db.supplier.count();
+    const userId = await getUserId(req);
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 },
+      );
+    }
+
+    const suppliersCount = await db.supplier.count({
+      where: { userId },
+    });
 
     const purchaseInvoices = await db.purchaseInvoice.findMany({
-      select: {
-        total: true,
-        paid: true,
-      },
+      where: { userId },
+      select: { total: true, paid: true },
     });
 
     const saleInvoices = await db.saleInvoice.findMany({
-      select: {
-        total: true,
-        paid: true,
-      },
+      where: { userId },
+      select: { total: true, paid: true },
     });
 
     const expenses = await db.expense.findMany({
-      select: {
-        amount: true,
-        category: true,
-      },
+      where: { userId },
+      select: { amount: true, category: true },
     });
 
     const payments = await db.payment.findMany({
-      select: {
-        amount: true,
-        type: true,
-        date: true,
-      },
+      where: { userId },
+      select: { amount: true, type: true, date: true },
     });
 
     const purchaseInvoiceStats = {
@@ -56,31 +58,27 @@ export const getStatics = async () => {
       ),
     };
 
-    type CategoryAccumulator = Record<string, number>;
-
     const expenseStats = {
       totalExpenses: expenses.length,
       totalAmount: expenses.reduce((sum, expense) => sum + expense.amount, 0),
-      byCategory: expenses.reduce<CategoryAccumulator>((categories, expense) => {
+      byCategory: expenses.reduce<Record<string, number>>((categories, expense) => {
         categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
         return categories;
       }, {}),
     };
 
-    type PaymentTypeAccumulator = Record<string, number>;
-
     const paymentStats = {
       totalPayments: payments.length,
       totalAmount: payments.reduce((sum, payment) => sum + payment.amount, 0),
-      byType: payments.reduce<PaymentTypeAccumulator>((types, payment) => {
+      byType: payments.reduce<Record<string, number>>((types, payment) => {
         types[payment.type] = (types[payment.type] || 0) + payment.amount;
         return types;
       }, {}),
       recentPayments: payments.slice(-5).reverse(),
     };
 
-    return {
-      message: 'success retrieve statics',
+    return NextResponse.json({
+      message: 'Success retrieving statistics',
       details: {
         suppliersCount,
         purchaseInvoiceStats,
@@ -88,20 +86,25 @@ export const getStatics = async () => {
         expenseStats,
         paymentStats,
       },
-    };
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        message: 'Invalid parameters',
-        errors: error.errors,
-      };
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Invalid parameters',
+          errors: error.errors,
+        },
+        { status: 400 },
+      );
     }
 
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : 'Error while fetching statistics',
-    };
+    return NextResponse.json(
+      {
+        success: false,
+        message: error instanceof Error ? error.message : 'Error while fetching statistics',
+      },
+      { status: 500 },
+    );
   }
 };
