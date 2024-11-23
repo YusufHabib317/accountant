@@ -3,12 +3,21 @@ import { db } from '@/lib/db';
 export const getUserByEmail = async (email: string) => {
   try {
     const user = await db.user.findUnique({
-      where: { email },
+      where: {
+        email,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        emailVerified: true,
+      },
     });
-    console.log('User fetched:', user);
+    console.log('Database query result:', user);
     return user;
   } catch (error) {
     console.error('Error fetching user:', error);
+    console.error('Error details:', error instanceof Error ? error.message : error);
     return null;
   }
 };

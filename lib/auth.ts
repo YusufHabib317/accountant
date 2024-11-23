@@ -43,7 +43,7 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       otpLength: 6,
-      expiresIn: 600,
+      expiresIn: 6000,
       async sendVerificationOTP({ email, otp, type }) {
         await sendEmail({
           email,
@@ -53,4 +53,5 @@ export const auth = betterAuth({
       },
     }),
   ],
+
 });
