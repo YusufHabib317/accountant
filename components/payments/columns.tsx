@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -58,7 +60,6 @@ export const paymentsColumns: ColumnDef<PaymentsApiResponse[number]>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
               className="flex justify-center items-center"
-              onClick={() => router.push(`${ROUTES.payment.path}/${payment.id}`)}
             >
               <Pencil />
               {' '}

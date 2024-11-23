@@ -7,8 +7,6 @@ import {
   QueryClient,
   QueryClientProvider,
   Hydrate,
-  QueryCache,
-  MutationCache,
 } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToast } from '@/components/ui/sonner';
@@ -37,16 +35,6 @@ export function Providers({
           keepPreviousData: true,
         },
       },
-      queryCache: new QueryCache({
-        onError: (error, query) => {
-          console.error(`Something went wrong: ${error}`);
-        },
-      }),
-      mutationCache: new MutationCache({
-        onError: (error) => {
-          console.error(`Mutation error: ${error}`);
-        },
-      }),
     }),
   );
   return (
