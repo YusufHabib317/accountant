@@ -53,7 +53,5 @@ export const auth = betterAuth({
       },
     }),
   ],
-
-  trustedOrigins: [process.env.TRUSTED_ORIGINS!, '*'],
-
+  trustedOrigins: [process.env.TRUSTED_ORIGINS!],
 });
