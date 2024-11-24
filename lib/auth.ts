@@ -53,5 +53,16 @@ export const auth = betterAuth({
       },
     }),
   ],
-  trustedOrigins: [process.env.TRUSTED_ORIGINS!],
+
+  trustedOrigins: ['https://*', 'http://localhost:*'],
+
+  cors: {
+    credentials: true,
+    allowedHeaders: ['content-type', 'authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    origin: (requestOrigin: any, callback: (arg0: null, arg1: boolean) => void) => {
+      callback(null, true);
+    },
+  },
 });

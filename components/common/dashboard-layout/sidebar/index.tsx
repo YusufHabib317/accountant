@@ -90,7 +90,7 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
             <SidebarGroupContent>
-              <SidebarMenu className="flex justify-start items-start ml-2 my-2">
+              <SidebarMenu className="flex justify-start items-start ml-2 my-3">
                 {mounted && (
                 <button onClick={logOut}>
                   <LogOut size={20} />
