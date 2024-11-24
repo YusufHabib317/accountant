@@ -12,18 +12,22 @@ import {
   SidebarMenuButton,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { links } from '@/data';
-import { Moon, Sun } from 'lucide-react';
+import { authConfigRoutes, links } from '@/data';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { ClientOnly } from '../../client-only';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut } from '@/lib/auth-client';
+import { useToast } from '@/hooks/use-toast';
 
 export function AppSidebar() {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const currentPath = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
@@ -31,6 +35,25 @@ export function AppSidebar() {
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
+  const logOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast({
+            title: 'Log out',
+            description: 'Successfully logged out',
+          });
+          router.push(`${authConfigRoutes.DEFAULT_LOGIN_REDIRECT}`);
+        },
+        onError: (ctx) => {
+          toast({
+            title: 'Log out',
+            description: ctx.error.message,
+          });
+        },
+      },
+    });
   };
   return (
     <ClientOnly>
@@ -62,6 +85,15 @@ export function AppSidebar() {
                   ) : (
                     <Moon size={20} />
                   )}
+                </button>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+            <SidebarGroupContent>
+              <SidebarMenu className="flex justify-start items-start ml-2">
+                {mounted && (
+                <button onClick={logOut}>
+                  <LogOut />
                 </button>
                 )}
               </SidebarMenu>
