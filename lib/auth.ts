@@ -54,7 +54,11 @@ export const auth = betterAuth({
     }),
   ],
 
-  trustedOrigins: ['https://*', 'http://localhost:*'],
+  trustedOrigins: [
+    'http://localhost:*',
+    'https://accountant-36h9.onrender.com/auth',
+    'https://accountant-36h9.onrender.com/auth/*',
+  ],
 
   cors: {
     credentials: true,
