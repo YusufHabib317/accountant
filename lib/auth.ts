@@ -57,7 +57,10 @@ export const auth = betterAuth({
   trustedOrigins: [
     'http://localhost:*',
     'https://accountant-36h9.onrender.com/auth',
-    'https://accountant-36h9.onrender.com/auth/*',
+    'https://accountant-36h9.onrender.com/auth/login',
+    'https://accountant-36h9.onrender.com/auth/register',
+    'https://accountant-36h9.onrender.com/auth/reset-password',
+    'https://accountant-36h9.onrender.com/auth/otp-email-verification',
   ],
 
   cors: {
