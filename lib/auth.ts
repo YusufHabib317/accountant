@@ -31,8 +31,9 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendResetPassword: async (user: any, url: any) => {
-      // eslint-disable-next-line no-useless-escape
-      const resetUrl = url.replace(/^https?:\/\/[^\/]+/, baseUrl);
+      const resetUrl = url
+        .replace(/\/auth\/auth\//, '/auth/')
+        .replace(/^https?:\/\/localhost:\d+/, baseUrl);
 
       await sendEmail({
         email: user.email,
