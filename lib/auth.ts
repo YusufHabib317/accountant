@@ -1,10 +1,11 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { emailOTP } from 'better-auth/plugins';
-
 import { sendEmail } from '@/utils/email';
-
 import { db } from './db';
+import { getBaseUrl } from './get-base-url';
+
+const baseUrl = getBaseUrl();
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -30,10 +31,13 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendResetPassword: async (user: any, url: any) => {
+      // eslint-disable-next-line no-useless-escape
+      const resetUrl = url.replace(/^https?:\/\/[^\/]+/, baseUrl);
+
       await sendEmail({
         email: user.email,
         subject: 'Reset your password',
-        message: `Click the link to reset your password: ${url}`,
+        message: `Click the link to reset your password: ${resetUrl}`,
       });
     },
   },
@@ -55,13 +59,13 @@ export const auth = betterAuth({
   ],
 
   trustedOrigins: [
-    'http://localhost:*',
-    'https://accountant-36h9.onrender.com',
-    'https://accountant-36h9.onrender.com/api/auth',
-    'https://accountant-36h9.onrender.com/api/auth/login',
-    'https://accountant-36h9.onrender.com/api/auth/register',
-    'https://accountant-36h9.onrender.com/api/auth/reset-password',
-    'https://accountant-36h9.onrender.com/api/auth/otp-email-verification',
+    baseUrl,
+    `${baseUrl}/api/auth`,
+    `${baseUrl}/api/auth/login`,
+    `${baseUrl}/api/auth/register`,
+    `${baseUrl}/api/auth/reset-password`,
+    `${baseUrl}/api/auth/otp-email-verification`,
+    ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:*'] : []),
   ],
 
   cors: {
